@@ -439,19 +439,46 @@ def cmd_library(args) -> int:
 DEFAULT_MODEL = "large-v3-turbo-q5_0"
 
 
+GGML_MAGIC = (b"lmgg", b"ggml", b"ggjt", b"fmgg")  # whisper.cpp model headers (little/big endian)
+
+
 def _download_model(name: str) -> Path:
     from . import transcript as tr
     name = name.removeprefix("ggml-").removesuffix(".bin")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name) or ".." in name:
+        raise SystemExit(f"Bad model name {name!r}; use a name like {DEFAULT_MODEL} or small.en")
     dest = HOME / "models" / f"ggml-{name}.bin"
     dest.parent.mkdir(parents=True, exist_ok=True)
     log(f"downloading whisper.cpp model {name} to {dest}…")
     tmp = dest.with_suffix(".part")
-    urllib.request.urlretrieve(tr.MODEL_URL.format(name=name), tmp)
-    tmp.replace(dest)
+    try:
+        urllib.request.urlretrieve(tr.MODEL_URL.format(name=name), tmp)
+        with tmp.open("rb") as stream:
+            magic = stream.read(4)
+        if magic not in GGML_MAGIC or tmp.stat().st_size < 10_000_000:
+            raise SystemExit(f"Download of {name} is not a whisper.cpp model; discarded it.")
+        tmp.replace(dest)
+    finally:
+        tmp.unlink(missing_ok=True)
     return dest
 
 
-def _install(cmd: list[str]) -> bool:
+def _confirm(what: str, assume_yes: bool) -> bool:
+    """Ask before installing software or downloading large files, unless --yes was passed."""
+    if assume_yes:
+        return True
+    if not sys.stdin.isatty():
+        log(f"skipped: {what} (needs confirmation; re-run with --yes to allow)")
+        return False
+    try:
+        return input(f"[eyes] {what}? [y/N] ").strip().lower() in ("y", "yes")
+    except EOFError:
+        return False
+
+
+def _install(cmd: list[str], assume_yes: bool = False) -> bool:
+    if not _confirm("run: " + " ".join(cmd), assume_yes):
+        return False
     log("running: " + " ".join(cmd))
     return subprocess.run(cmd, stdout=sys.stderr, stderr=sys.stderr).returncode == 0
 
@@ -477,10 +504,11 @@ def cmd_setup(args) -> int:
         _download_model(args.download_model)
     if args.fix:
         if not (shutil.which("ffmpeg") and shutil.which("ffprobe")) and (cmd := _fix_command("ffmpeg")):
-            _install(cmd)
+            _install(cmd, args.yes)
         if not tr.whisper_binary() and (cmd := _fix_command("whisper-cpp")):
-            _install(cmd)
-        if tr.whisper_binary() and not tr.find_model():
+            _install(cmd, args.yes)
+        if tr.whisper_binary() and not tr.find_model() and _confirm(
+                f"download the whisper.cpp model {DEFAULT_MODEL} (about 570 MB) from huggingface.co", args.yes):
             _download_model(DEFAULT_MODEL)
     ocr = ocr_engine()
     checks = [
@@ -633,7 +661,8 @@ def main() -> int:
     p = command("library")
     p.set_defaults(func=cmd_library)
     p = command("setup")
-    p.add_argument("--fix", action="store_true", help="install missing pieces (ffmpeg, whisper.cpp, a model)")
+    p.add_argument("--fix", action="store_true", help="install missing pieces (ffmpeg, whisper.cpp, a model); asks first")
+    p.add_argument("--yes", action="store_true", help="with --fix: install and download without asking")
     p.add_argument("--download-model", help=f"fetch a whisper.cpp model, e.g. {DEFAULT_MODEL} or small.en")
     p.set_defaults(func=cmd_setup)
     p = command("install-skill")

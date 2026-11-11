@@ -1,6 +1,7 @@
 # Installing Eyes (for agents)
 
-A user asked you to install Eyes. Do it end to end without asking about routine steps.
+A user asked you to install Eyes. Before running anything, tell the user what will be installed (the `eyes`
+command, ffmpeg, whisper.cpp, a ~570 MB speech model) and get their OK. Never run `sudo` yourself.
 
 1. Install the command line tool, using the first that works:
    ```bash
@@ -10,11 +11,12 @@ A user asked you to install Eyes. Do it end to end without asking about routine 
    ```
    If `eyes` is then not found, the install folder isn't on PATH: run `uv tool update-shell` or
    `pipx ensurepath`, or call it as `python3 -m eyes`.
-2. `eyes setup --fix` installs ffmpeg, whisper.cpp and a speech model (about 570 MB) where it can.
+2. `eyes setup --fix` installs ffmpeg, whisper.cpp and a speech model (about 570 MB) where it can. It asks
+   before each install or download; once the user has agreed, run `eyes setup --fix --yes`.
 3. `eyes install-skill` copies the skill into `~/.claude/skills` and/or `~/.agents/skills`, depending on which
    agents are present. Use `--to DIR` for another skills folder.
 4. `eyes setup` must print `READY`. If it prints `NOT READY`, it names what's left. If that needs a password
-   (sudo) or a choice only the user can make, show them the exact command once.
+   (sudo) or a choice only the user can make, show them the exact command and let them run it.
 
 Then tell the user to restart their agent and try: "Use eyes to watch <video> and tell me ...".
 Every command accepts `--json`. Usage is in `skills/eyes/SKILL.md`.

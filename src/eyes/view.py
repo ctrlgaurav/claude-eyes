@@ -41,9 +41,17 @@ def build(vdir: Path) -> Path:
         "cpm": round(max(0, len(shots) - 1) * 60 / duration, 1),
     }
     out = vdir / "view.html"
-    out.write_text(TEMPLATE.replace("/*__DATA__*/", "const D = " + json.dumps(data, ensure_ascii=False) + ";"),
-                   encoding="utf-8")
+    out.write_text(TEMPLATE.replace("/*__DATA__*/", "const D = " + script_json(data) + ";"), encoding="utf-8")
     return out
+
+
+def script_json(data) -> str:
+    """JSON that is safe inside an inline <script>. Titles, captions and on-screen text come from the
+    video and are untrusted: a raw "</script>" or "<!--" in them would otherwise end the script block
+    and let the rest run as HTML. U+2028/2029 are escaped for older JavaScript parsers."""
+    return (json.dumps(data, ensure_ascii=False)
+            .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
 TEMPLATE = r"""<!doctype html>
@@ -99,7 +107,10 @@ footer{padding:0 18px 12px}
 /*__DATA__*/
 const $=s=>document.querySelector(s), v=$('#v'), ov=$('#ov'), tl=$('#tl');
 const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)};
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mark=(s,q)=>{s=String(s);const out=[];let i=0,lo=s.toLowerCase(),j;if(!q)return esc(s);
+ while((j=lo.indexOf(q,i))>=0){out.push(esc(s.slice(i,j)),'<mark>',esc(s.slice(j,j+q.length)),'</mark>');i=j+q.length}
+ out.push(esc(s.slice(i)));return out.join('')};
 const cuts=D.shots.slice(1).map(s=>s.s), spk={}; D.speakers.forEach((s,i)=>spk[s]='S'+(i+1));
 v.src=D.video; v.onerror=()=>{if(v.src!==D.videoAbs&&location.protocol==='file:'){v.src=D.videoAbs;return}$('#stage').insertAdjacentHTML('beforeend','<div style="position:absolute;color:#f99;padding:20px;text-align:center">Video not found at<br><span class=mono>'+esc(decodeURI(D.video))+'</span><br>Re-index it, or open this file from your own computer.</div>')};
 $('#title').textContent=D.title; document.title='eyes · '+D.title;
@@ -124,12 +135,12 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset
 function tab(p){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id===p))}
 // search
 $('#q').oninput=()=>{const q=$('#q').value.trim().toLowerCase();if(!q){tab('ptr');return}tab('pres');
- const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');const hits=[];
+ const hits=[];
  D.segs.forEach(s=>{if(s.t.toLowerCase().includes(q)){let t=s.s;const w=D.words.find(w=>w[0]>=s.s-0.3&&w[0]<=s.e+0.3&&w[2].toLowerCase().includes(q.split(' ')[0]));if(w)t=w[0];hits.push(['said',t,s.t])}});
  D.spans.forEach(s=>{if(s.t.toLowerCase().includes(q))hits.push(['shown',s.s,s.t])});
  D.events.forEach(e=>{if(e.text.toLowerCase().includes(q))hits.push(['heard',e.start,e.text])});
  hits.sort((a,b)=>a[1]-b[1]);
- $('#pres').innerHTML=`<div style="color:var(--dim);margin-bottom:6px">${hits.length} match${hits.length==1?'':'es'}</div>`+hits.map(h=>`<div class="row" data-t="${h[1]}"><span class="t mono">${fmt(h[1])}</span><span class="tag ${h[0]}">${h[0]}</span>${esc(h[2]).replace(re,'<mark>$1</mark>')}</div>`).join('');
+ $('#pres').innerHTML=`<div style="color:var(--dim);margin-bottom:6px">${hits.length} match${hits.length==1?'':'es'}</div>`+hits.map(h=>`<div class="row" data-t="${h[1]}"><span class="t mono">${fmt(h[1])}</span><span class="tag ${h[0]}">${h[0]}</span>${mark(h[2],q)}</div>`).join('');
  searchHits=hits;drawTL()};
 let searchHits=[];
 // shot strip

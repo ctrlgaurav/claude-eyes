@@ -46,7 +46,7 @@ The agent follows [AGENTS.md](AGENTS.md), which comes down to four commands:
 
 ```bash
 uv tool install git+https://github.com/moritzkremb/claude-eyes   # or pipx install / pip install --user
-eyes setup --fix        # installs ffmpeg, whisper.cpp and a speech model where it can
+eyes setup --fix        # installs ffmpeg, whisper.cpp and a speech model where it can (asks first; --yes skips)
 eyes install-skill      # teaches your agents (Claude Code, Codex, Cursor) how to use Eyes
 eyes setup              # prints READY when everything works
 ```

@@ -39,13 +39,13 @@ Claude: eyes index "https://youtube.com/watch?v=..."
 Paste this into Claude Code, Codex, Cursor or any agent that can run commands:
 
 ```text
-Install Eyes from https://github.com/moritzkremb/claude-eyes and set it up for yourself.
+Install Eyes from https://github.com/ctrlgaurav/claude-eyes and set it up for yourself.
 ```
 
 The agent follows [AGENTS.md](AGENTS.md), which comes down to four commands:
 
 ```bash
-uv tool install git+https://github.com/moritzkremb/claude-eyes   # or pipx install / pip install --user
+uv tool install git+https://github.com/ctrlgaurav/claude-eyes   # or pipx install / pip install --user
 eyes setup --fix        # installs ffmpeg, whisper.cpp and a speech model where it can (asks first; --yes skips)
 eyes install-skill      # teaches your agents (Claude Code, Codex, Cursor) how to use Eyes
 eyes setup              # prints READY when everything works
@@ -54,7 +54,7 @@ eyes setup              # prints READY when everything works
 Restart the agent, then just ask: *"Use eyes to watch this video and tell me..."*
 
 Works on macOS, Linux and Windows with Python 3.10+. Prefer to only add the skill? `npx skills add
-moritzkremb/claude-eyes` installs it, and the skill installs the command line tool the first time it's used.
+ctrlgaurav/claude-eyes` installs it, and the skill installs the command line tool the first time it's used.
 
 Optional: an ElevenLabs API key (`ELEVENLABS_API_KEY`) for the opt-in cloud transcriber. On-screen text works out of
 the box (Apple Vision on macOS, RapidOCR elsewhere).

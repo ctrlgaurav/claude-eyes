@@ -22,7 +22,7 @@ Run `eyes setup`. If it prints `READY`, continue. Otherwise tell the user what i
 involves (packages, a ~570 MB model download), and get their OK before running:
 
 ```bash
-uv tool install git+https://github.com/moritzkremb/claude-eyes   # if `eyes` is missing; else pipx install / pip install --user
+uv tool install git+https://github.com/ctrlgaurav/claude-eyes   # if `eyes` is missing; else pipx install / pip install --user
 eyes setup --fix --yes                                           # after the user agreed: ffmpeg, whisper.cpp, a model
 eyes setup                                                       # repeat until READY; it names anything left to do by hand
 ```

@@ -5,9 +5,9 @@ command, ffmpeg, whisper.cpp, a ~570 MB speech model) and get their OK. Never ru
 
 1. Install the command line tool, using the first that works:
    ```bash
-   uv tool install git+https://github.com/moritzkremb/claude-eyes
-   pipx install git+https://github.com/moritzkremb/claude-eyes
-   python3 -m pip install --user git+https://github.com/moritzkremb/claude-eyes
+   uv tool install git+https://github.com/ctrlgaurav/claude-eyes
+   pipx install git+https://github.com/ctrlgaurav/claude-eyes
+   python3 -m pip install --user git+https://github.com/ctrlgaurav/claude-eyes
    ```
    If `eyes` is then not found, the install folder isn't on PATH: run `uv tool update-shell` or
    `pipx ensurepath`, or call it as `python3 -m eyes`.
